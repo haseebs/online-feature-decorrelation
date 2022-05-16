@@ -30,3 +30,11 @@
 *.exe
 *.out
 *.app
+
+*.cmake
+CMakeFiles/*
+CMakeCache.txt
+Makefile
+
+*ipynb_checkpoints/
+

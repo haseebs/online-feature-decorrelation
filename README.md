@@ -1,1 +1,1 @@
-# online-feature-decorrelation
+# constructive_rnn
