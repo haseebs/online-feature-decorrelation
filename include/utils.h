@@ -11,6 +11,7 @@
 #include <fstream>
 #include <vector>
 #include <iomanip>
+#include "nn/networks/single_layer_network.h"
 
 
 template <class T>
@@ -43,21 +44,21 @@ const &v);
 void print_matrix(std::vector < std::vector < float >>
 const &v);
 
-//class NetworkVisualizer {
-//  std::string dot_string;
-//  std::vector<NeuronSy *> all_neurons;
-//
-// public:
-//  explicit NetworkVisualizer(std::vector<Neuron *> all_neurons);
-//
-//  void generate_dot(int time_step);
-//
+class NetworkVisualizer {
+  std::string dot_string;
+  SingleLayerNetwork *network;
+
+ public:
+  explicit NetworkVisualizer(SingleLayerNetwork *network);
+
+  void generate_dot(int time_step);
+
 //  std::string get_graph(int time_step);
 //
 //  std::string get_graph_detailed(int time_step);
 //
 //  void generate_dot_detailed(int time_step);
-//};
+};
 
 #endif  // INCLUDE_UTILS_H_
 

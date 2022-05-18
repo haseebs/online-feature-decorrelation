@@ -74,6 +74,43 @@ void print_matrix(std::vector < std::vector < int >> const &v) {
     }
   std::cout << "\n";
 }
+
+NetworkVisualizer::NetworkVisualizer(SingleLayerNetwork *network) {
+  this->network = network;
+}
+
+void NetworkVisualizer::generate_dot(int time_step) {
+  auto input_neurons = network->input_neurons;
+  auto intermediate_neurons = network->intermediate_neurons;
+  auto prediction_weights = network->prediction_weights;
+  dot_string = "digraph network{\n"
+               "\tnode [shape = circle];\n";
+
+  for (auto &it : input_neurons) {
+    for (auto &os : it->outgoing_synapses) {
+      //if (os->input_neuron->is_mature && os->output_neuron->is_mature) {
+      if (true) {
+        auto current_n = os;
+        dot_string += "\t" + std::to_string(current_n->input_neuron->id)
+            + "->" + std::to_string(current_n->output_neuron->id)  //+ ";\n";
+            + "[label = \"" + std::to_string(os->weight).substr(0, std::to_string(os->weight).find(".") + 2 + 1) + "\"];\n";
+      }
+    }
+  }
+
+  for (int i = 0; i < intermediate_neurons.size(); i++) {
+        dot_string += "\t" + std::to_string(intermediate_neurons[i]->id)
+            + "->" + "y"  //+ ";\n";
+            + "[label = \"" + std::to_string(prediction_weights[i]).substr(0, std::to_string(prediction_weights[i]).find(".") + 2 + 1) + "\"];\n";
+  }
+
+  dot_string += "\n}";
+  std::ofstream dot_file("vis/" + std::to_string(time_step) + "_simple" + ".gv");
+  dot_file << dot_string;
+  dot_file.close();
+}
+
+
 //
 //NetworkVisualizer::NetworkVisualizer(std::vector<Neuron *> all_neurons) {
 //  this->all_neurons = all_neurons;
