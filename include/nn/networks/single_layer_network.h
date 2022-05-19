@@ -34,7 +34,7 @@ class SingleLayerNetwork {
 
   std::vector<float> feature_std;
 
-  std::vector<float> avg_feature_value;
+  std::vector<float> feature_utility_trace;
 
   std::vector<float> prediction_weights_gradient;
 
@@ -42,10 +42,11 @@ class SingleLayerNetwork {
 
   std::vector<Neuron*> input_neurons;
 
-  std::vector<ReluNeuron*> intermediate_neurons;
+  std::vector<SigmoidNeuron*> intermediate_neurons;
 
   float read_output_values();
 
+  void replace_features(float perc_to_replace);
   SingleLayerNetwork(float step_size, int seed, int no_of_input_features, int no_of_intermediate_features, bool is_target_network);
 
   ~SingleLayerNetwork();
@@ -60,6 +61,7 @@ class SingleLayerNetwork {
 
   std::vector<float> get_prediction_gradients();
   std::vector<float> get_prediction_weights();
+  std::vector<float> get_feature_utilities();
 
 };
 

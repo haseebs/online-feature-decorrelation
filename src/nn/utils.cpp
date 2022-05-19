@@ -102,6 +102,12 @@ std::vector<int> sum(const std::vector<int> &lhs, const std::vector<int> &rhs) {
   return ans_vector;
 }
 
+std::vector<float> sort_copy(const std::vector<float> &values){
+  std::vector<float> sorted_vec(values.size());
+  std::partial_sort_copy(begin(values), end(values), begin(sorted_vec), end(sorted_vec));
+  return sorted_vec;
+}
+
 float max(std::vector<float> values) {
   auto it = std::max_element(values.begin(), values.end());
   return *it;
@@ -110,6 +116,11 @@ float max(std::vector<float> values) {
 float min(std::vector<float> values) {
   auto it = std::min_element(values.begin(), values.end());
   return *it;
+}
+
+float min_idx(std::vector<float> values) {
+  auto it = std::min_element(values.begin(), values.end());
+  return std::distance(std::begin(values), it);
 }
 
 float min(float a, float b) {
@@ -154,6 +165,12 @@ std::vector<float> mean(const std::vector<std::vector<float>> &values) {
   for (int counter = 0; counter < dim; counter++)
     ans_vector[counter] = ans_vector[counter] / values.size();
   return ans_vector;
+}
+
+
+float median(const std::vector<float> &values) {
+  std::vector<float> sorted = sort_copy(values);
+  return sorted[int(values.size() / 2)];
 }
 
 uniform_random::uniform_random(int seed) {

@@ -7,6 +7,7 @@
 #include <cmath>
 #include <algorithm>
 #include "include/nn/networks/single_layer_network.h"
+#include "include/nn/neuron.h"
 
 
 int main(int argc, char *argv[]) {
@@ -28,26 +29,30 @@ int main(int argc, char *argv[]) {
 
   std::mt19937 mt(my_experiment.get_int_param("seed"));
   int total_inputs = my_experiment.get_int_param("n_inputs") + my_experiment.get_int_param("n_distractors");
-  auto learning_network = SingleLayerNetwork(my_experiment.get_float_param("step_size"),
-                                             my_experiment.get_int_param("seed"),
-                                             total_inputs,
-                                             my_experiment.get_int_param("n_learner_features"),
-                                             false);
   auto target_network = SingleLayerNetwork(0.0,
                                            my_experiment.get_int_param("seed") + 1000,
                                            my_experiment.get_int_param("n_inputs"),
                                            my_experiment.get_int_param("n_target_features"),
                                            true);
-  NetworkVisualizer learning_vis = NetworkVisualizer(&learning_network);
+  Neuron::neuron_id_generator = 0;
+  auto learning_network = SingleLayerNetwork(my_experiment.get_float_param("step_size"),
+                                             my_experiment.get_int_param("seed"),
+                                             total_inputs,
+                                             my_experiment.get_int_param("n_learner_features"),
+                                             false);
+
   NetworkVisualizer target_vis = NetworkVisualizer(&target_network);
-  learning_vis.generate_dot(1);
+  NetworkVisualizer learning_vis = NetworkVisualizer(&learning_network);
   target_vis.generate_dot(0);
+  learning_vis.generate_dot(1);
 
   auto input_sampler = uniform_random(my_experiment.get_int_param("seed"), -10, 10);
 
   float running_error = 0.05;
 
   for (int step = 0; step < my_experiment.get_int_param("steps"); step++) {
+    if (step % my_experiment.get_int_param("replace_every") == 1)
+      learning_network.replace_features(my_experiment.get_float_param("replace_perc"));
     auto input = input_sampler.get_random_vector(total_inputs);
     float pred = learning_network.forward(input);
     float target = target_network.forward(input);
@@ -65,9 +70,10 @@ int main(int argc, char *argv[]) {
       std::cout << "\nstep:" << step << std::endl;
       print_vector(input);
       print_vector(learning_network.get_prediction_weights());
+      print_vector(learning_network.get_feature_utilities());
       print_vector(learning_network.get_prediction_gradients());
-      std::cout << "target: " << target << " pred: " << pred;
-      std::cout << std::endl;
+      std::cout << "target: " << target << " pred: " << pred << std::endl;
+      std::cout << "running err: " << running_error << std::endl;
     }
     learning_network.zero_grad();
   }
