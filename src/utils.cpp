@@ -93,8 +93,8 @@ void NetworkVisualizer::generate_dot(int time_step) {
         auto current_n = os;
         dot_string += "\t" + std::to_string(current_n->input_neuron->id)
             + "->" + std::to_string(current_n->output_neuron->id)  //+ ";\n";
-            + ";\n";
-            //+ "[label = \"" + std::to_string(os->weight).substr(0, std::to_string(os->weight).find(".") + 2 + 1) + "\"];\n";
+            //+ ";\n";
+            + "[label = \"" + std::to_string(os->weight).substr(0, std::to_string(os->weight).find(".") + 2 + 1) + "\"];\n";
       }
     }
   }

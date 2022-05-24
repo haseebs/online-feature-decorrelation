@@ -6,6 +6,7 @@
 #include <map>
 #include <random>
 #include <string>
+#include <map>
 #include "../synapse.h"
 #include "../neuron.h"
 #include "../dynamic_elem.h"
@@ -62,6 +63,14 @@ class SingleLayerNetwork {
   std::vector<float> get_prediction_gradients();
   std::vector<float> get_prediction_weights();
   std::vector<float> get_feature_utilities();
+
+  std::map<std::pair<int, int>, float> feature_correlations;
+  void calculate_all_correlations();
+  void print_all_correlations();
+  void print_all_statistics();
+  int count_highly_correlated_features();
+  void replace_features_with_idx(int feature_idx);
+  void decorrelate_features_baseline();
 
 };
 

@@ -15,17 +15,11 @@ int main(int argc, char *argv[]) {
   Experiment my_experiment = Experiment(argc, argv);
 
   Metric error_metric = Metric(my_experiment.database_name, "error_table",
-                               std::vector < std::string > {"run", "step", "error"},
-                               std::vector < std::string > {"int", "int", "real"},
-                               std::vector < std::string > {"run", "step"});
-
-  Metric feature_metric = Metric(my_experiment.database_name, "feature_table",
-                               std::vector < std::string > {"run", "step", "w1", "w2", "w3"},
-                               std::vector < std::string > {"int", "int", "real", "real", "real"},
+                               std::vector < std::string > {"run", "step", "error", "n_correlated"},
+                               std::vector < std::string > {"int", "int", "real", "int"},
                                std::vector < std::string > {"run", "step"});
 
   std::cout << "Program started \n";
-
 
   std::mt19937 mt(my_experiment.get_int_param("seed"));
   int total_inputs = my_experiment.get_int_param("n_inputs") + my_experiment.get_int_param("n_distractors");
@@ -59,23 +53,32 @@ int main(int argc, char *argv[]) {
     float error = target - pred;
 
     running_error = 0.995 * running_error + 0.005 * (target - pred) * (target - pred);
+    learning_network.calculate_all_correlations();
 
-    //std::vector<std::string> cur_error;
-    //cur_error.push_back(std::to_string(my_experiment.get_int_param("run")));
-    //cur_error.push_back(std::to_string(step));
-    //cur_error.push_back(std::to_string(running_error));
     learning_network.backward();
     learning_network.update_parameters(error);
-    if (step%1 == 0){
+    if (step%10000 == 0 && step >= 180000)
+      learning_network.decorrelate_features_baseline();
+    if (step%10000 == 0){
+      std::vector<std::string> cur_error;
+      cur_error.push_back(std::to_string(my_experiment.get_int_param("run")));
+      cur_error.push_back(std::to_string(step));
+      cur_error.push_back(std::to_string(running_error));
+      cur_error.push_back(std::to_string(learning_network.count_highly_correlated_features()));
+      error_metric.record_value(cur_error);
       std::cout << "\nstep:" << step << std::endl;
-      print_vector(input);
-      print_vector(learning_network.get_prediction_weights());
-      print_vector(learning_network.get_feature_utilities());
-      print_vector(learning_network.get_prediction_gradients());
+      //print_vector(input);
+      //print_vector(learning_network.get_prediction_weights());
+      //print_vector(learning_network.get_feature_utilities());
+      //print_vector(learning_network.get_prediction_gradients());
       std::cout << "target: " << target << " pred: " << pred << std::endl;
       std::cout << "running err: " << running_error << std::endl;
+      learning_network.print_all_correlations();
+      //learning_network.print_all_statistics();
+      std::cout << "total unremovable correlated features: " << learning_network.count_highly_correlated_features() << std::endl;
     }
     learning_network.zero_grad();
+    error_metric.commit_values();
   }
   learning_vis.generate_dot(my_experiment.get_int_param("steps"));
 }
