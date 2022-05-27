@@ -70,7 +70,7 @@ class SingleLayerNetwork {
   void print_all_statistics();
   int count_highly_correlated_features();
   void replace_features_with_idx(int feature_idx);
-  void decorrelate_features_baseline();
+  void decorrelate_features_baseline(int sum_features);
 
 };
 

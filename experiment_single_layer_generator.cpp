@@ -19,6 +19,11 @@ int main(int argc, char *argv[]) {
                                std::vector < std::string > {"int", "int", "real", "int"},
                                std::vector < std::string > {"run", "step"});
 
+  Metric summary_metric = Metric(my_experiment.database_name, "summary_table",
+                               std::vector < std::string > {"run", "final_error", "final_n_correlated"},
+                               std::vector < std::string > {"int", "real", "int"},
+                               std::vector < std::string > {"run"});
+
   std::cout << "Program started \n";
 
   std::mt19937 mt(my_experiment.get_int_param("seed"));
@@ -57,9 +62,9 @@ int main(int argc, char *argv[]) {
 
     learning_network.backward();
     learning_network.update_parameters(error);
-    if (step%10000 == 0 && step >= 180000)
-      learning_network.decorrelate_features_baseline();
-    if (step%10000 == 0){
+    if (my_experiment.get_int_param("n2_decorrelate") and step%5000 == 0 && step >= 180000)
+      learning_network.decorrelate_features_baseline(my_experiment.get_int_param("sum_features"));
+    if (step%5000 == 0){// || step%5000 == 4999){
       std::vector<std::string> cur_error;
       cur_error.push_back(std::to_string(my_experiment.get_int_param("run")));
       cur_error.push_back(std::to_string(step));
@@ -80,5 +85,11 @@ int main(int argc, char *argv[]) {
     learning_network.zero_grad();
     error_metric.commit_values();
   }
+  std::vector<std::string> cur_error;
+  cur_error.push_back(std::to_string(my_experiment.get_int_param("run")));
+  cur_error.push_back(std::to_string(running_error));
+  cur_error.push_back(std::to_string(learning_network.count_highly_correlated_features()));
+  summary_metric.record_value(cur_error);
+  summary_metric.commit_values();
   learning_vis.generate_dot(my_experiment.get_int_param("steps"));
 }

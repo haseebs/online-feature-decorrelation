@@ -76,15 +76,16 @@ SingleLayerNetwork::SingleLayerNetwork(float step_size,
   }
 }
 
-void SingleLayerNetwork::decorrelate_features_baseline() {
+void SingleLayerNetwork::decorrelate_features_baseline(int sum_features) {
   for (int i = 0; i < intermediate_neurons.size(); i++) {
     bool replaced = false;
     for (int j = i+1; j < intermediate_neurons.size(); j++) {
       if (replaced)
         continue;
       auto id_pair = std::make_pair(intermediate_neurons[i]->id, intermediate_neurons[j]->id);
-      if (fabs(feature_correlations[id_pair]) > 0.85 && intermediate_neurons[i]->neuron_age > 190000 && intermediate_neurons[j]->neuron_age > 190000 ){
-        prediction_weights[j] += prediction_weights[i]; //TODO assume single outgoing w
+      if (fabs(feature_correlations[id_pair]) > 0.85 && intermediate_neurons[i]->neuron_age > 200000 && intermediate_neurons[j]->neuron_age > 200000 ){
+        if (sum_features)
+          prediction_weights[j] += prediction_weights[i]; //TODO assume single outgoing w
         replace_features_with_idx(i);
         replaced = true;
       }
@@ -155,6 +156,7 @@ void SingleLayerNetwork::replace_features(float perc_to_replace) {
 
   for (int i = 0; i < int(prediction_weights.size() * perc_to_replace); i++) {
     float least_useful_idx = min_idx(feature_utility_trace);
+    //std::cout << "replacing: " << least_useful_idx << "\t util: " << feature_utility_trace[least_useful_idx] << "\t new: " << median_feature_utility << std::endl;
     //replaced_features.push_back(intermediate_neurons[least_useful_feature_idx]); //TODO cleanup
     for ( auto & synapse: this->intermediate_neurons[least_useful_idx]->incoming_synapses )
       synapse->is_useless = true;
@@ -355,11 +357,16 @@ void SingleLayerNetwork::backward() {
 }
 
 void SingleLayerNetwork::update_parameters(float error) {
+  //TODO assumes single outgoing weight from interm neuron
+  for (int index = 0; index < intermediate_neurons.size(); index++) {
+    float incoming_gradient = error * ( prediction_weights[index] / sqrt(feature_std[index]) ) * intermediate_neurons[index]->backward(intermediate_neurons[index]->value);
+    for (const auto & synapse : intermediate_neurons[index]->incoming_synapses)
+      synapse->weight += (step_size/1) * synapse->input_neuron->value * incoming_gradient;
+  }
   for (int index = 0; index < prediction_weights.size(); index++)
-      prediction_weights[index] += prediction_weights_gradient[index] * error * step_size;
+    prediction_weights[index] += prediction_weights_gradient[index] * error * step_size;
 
 //  bias += error * step_size * 0.001 * bias_gradients;
-
 }
 
 float SingleLayerNetwork::read_output_values() {
