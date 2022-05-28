@@ -48,6 +48,8 @@ class SingleLayerNetwork {
   float read_output_values();
 
   void replace_features(float perc_to_replace);
+  std::vector<std::pair<float,std::string>> replace_features(float perc_to_replace, bool decorrelate, int sum_features);
+
   SingleLayerNetwork(float step_size, int seed, int no_of_input_features, int no_of_intermediate_features, bool is_target_network);
 
   ~SingleLayerNetwork();
@@ -72,6 +74,10 @@ class SingleLayerNetwork {
   void replace_features_with_idx(int feature_idx);
   void decorrelate_features_baseline(int sum_features);
 
+  void calculate_random_correlations();
+  float get_normalized_values(int idx);
+
+  std::string get_graph(int id1, int id2);
 };
 
 

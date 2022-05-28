@@ -52,6 +52,7 @@ class NetworkVisualizer {
   explicit NetworkVisualizer(SingleLayerNetwork *network);
 
   void generate_dot(int time_step);
+  std::string get_graph(int id1, int id2);
 
 //  std::string get_graph(int time_step);
 //

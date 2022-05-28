@@ -6,6 +6,7 @@
 #include <fstream>
 #include <vector>
 #include <iomanip>
+#include <string>
 #include "../include/utils.h"
 
 void print_vector(std::vector < float > const &v) {
@@ -75,9 +76,11 @@ void print_matrix(std::vector < std::vector < int >> const &v) {
   std::cout << "\n";
 }
 
+
 NetworkVisualizer::NetworkVisualizer(SingleLayerNetwork *network) {
   this->network = network;
 }
+
 
 void NetworkVisualizer::generate_dot(int time_step) {
   auto input_neurons = network->input_neurons;
