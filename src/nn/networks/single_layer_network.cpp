@@ -74,6 +74,7 @@ SingleLayerNetwork::SingleLayerNetwork(float step_size,
 		feature_utility_trace.push_back(0); // trace of normalized feature value * outgoing weight
 		feature_mean.push_back(0);
 		feature_std.push_back(1);
+		id_to_idx[intermediate_neurons[j]->id] = j; //TODO this isnt cleaned up
 	}
 }
 
@@ -103,24 +104,6 @@ std::string SingleLayerNetwork::get_graph(int id1, int id2) {
 
 	dot_string += "\n}";
 	return dot_string;
-}
-
-
-void SingleLayerNetwork::decorrelate_features_baseline(int sum_features) {
-	for (int i = 0; i < intermediate_neurons.size(); i++) {
-		bool replaced = false;
-		for (int j = i+1; j < intermediate_neurons.size(); j++) {
-			if (replaced)
-				continue;
-			auto id_pair = std::make_pair(intermediate_neurons[i]->id, intermediate_neurons[j]->id);
-			if (fabs(feature_correlations[id_pair]) > 0.85 && intermediate_neurons[i]->neuron_age > 200000 && intermediate_neurons[j]->neuron_age > 200000 ) {
-				if (sum_features)
-					prediction_weights[j] += prediction_weights[i]; //TODO assume single outgoing w
-				replace_features_with_idx(i);
-				replaced = true;
-			}
-		}
-	}
 }
 
 
@@ -155,12 +138,17 @@ void SingleLayerNetwork::replace_features_with_idx(int feature_idx) {
 	feature_utility_trace[feature_idx] = median_feature_utility;
 	feature_mean[feature_idx] = 0;
 	feature_std[feature_idx] = 1;
+	id_to_idx[intermediate_neurons[feature_idx]->id] = feature_idx; //TODO this isnt cleaned up
 
 	for (int i = 0; i < intermediate_neurons.size(); i++) {
 		auto id_pair = std::make_pair(intermediate_neurons[i]->id, intermediate_neurons[feature_idx]->id);
 		feature_correlations.erase(id_pair);
+		random_feature_correlations.erase(id_pair);
+		random_feature_correlations_ages.erase(id_pair);
 		id_pair = std::make_pair(intermediate_neurons[feature_idx]->id, intermediate_neurons[i]->id);
 		feature_correlations.erase(id_pair);
+		random_feature_correlations.erase(id_pair);
+		random_feature_correlations_ages.erase(id_pair);
 	}
 
 	auto it = std::remove_if(this->input_synapses.begin(), this->input_synapses.end(), [](Synapse *s){
@@ -184,62 +172,119 @@ float SingleLayerNetwork::get_normalized_value(int idx){
 	return (intermediate_neurons[idx]->value - feature_mean[idx]) / sqrt(feature_std[idx]);
 }
 
-void SingleLayerNetwork::calculate_random_correlations(){
-  random_feature_correlations; //TODO define
-  random_feature_correlations_ages; //TODO define
-  std::vector<std::pair<int, int>> expired_pairs; //pairs that we gotta stop considering
-  for (auto & [id_pair, corr] : random_feature_correlations){
-    corr = 0.999 * corr + 0.001 * get_normalized_value(id_pair.first) * get_normalized_value(id_pair.second);
-    random_feature_correlations_ages[id_pair]++;
-    if (random_feature_correlations_ages[id_pair]++ > 1000 && corr < 0.85)
-      expired_pairs.push_back(id_pair);
-  }
-
-  for (auto & id_pair : expired_pairs) {
-    random_feature_correlations.erase(id_pair);
-    random_feature_correlations_ages.erase(id_pair);
-  }
-
-	std::uniform_int_distribution<int> index_sampler(0, this->intermediate_neurons.size() - 1);
-  while (random_feature_correlations.size() < intermediate_neurons.size()){
-    int i = index_sampler(mt);
-    int j = index_sampler(mt);
-    if (i == j)
-      continue;
-    if (i > j)
-      std::swap(i, j);
-
-    auto id_pair = std::make_pair(i, j);
-    random_feature_correlations[id_pair] = 0.5;
-    random_feature_correlations_ages[id_pair] = 0;
-  }
+void SingleLayerNetwork::calculate_all_correlations() {
+	//TODO the correlations map needs to be cleaned up for removed features
+	for (int i = 0; i < intermediate_neurons.size(); i++) {
+		for (int j = i; j < intermediate_neurons.size(); j++) {
+			auto id_pair = std::make_pair(intermediate_neurons[i]->id, intermediate_neurons[j]->id);
+			float i_normalizaed = (intermediate_neurons[i]->value - feature_mean[i]) / sqrt(feature_std[i]);
+			float j_normalizaed = (intermediate_neurons[j]->value - feature_mean[j]) / sqrt(feature_std[j]);
+			if (feature_correlations.contains(id_pair))
+				feature_correlations[id_pair] = 0.999 * feature_correlations[id_pair] + 0.001 * get_normalized_value(i) * get_normalized_value(j);
+			else
+				feature_correlations[id_pair] = 0;
+		}
+	}
 }
 
-std::vector<std::pair<float, std::string> > SingleLayerNetwork::replace_features(float perc_to_replace, bool decorrelate, int sum_features) {
+void SingleLayerNetwork::calculate_random_correlations(bool age_restriction){
+	std::vector<std::pair<int, int> > expired_pairs; //pairs that we gotta stop considering
+	//std::cout << "all pairs: " << std::endl;
+	for (auto & [id_pair, corr] : random_feature_correlations) {
+		corr = 0.999 * corr + 0.001 * get_normalized_value(id_to_idx[id_pair.first]) * get_normalized_value(id_to_idx[id_pair.second]);
+		//std::cout << intermediate_neurons[id_pair.first]->id << "\t->\t" << intermediate_neurons[id_pair.second]->id << "\t:\t" << feature_correlations[id_pair] << "\t age: " << intermediate_neurons[id_pair.first]->neuron_age << "-" << intermediate_neurons[id_pair.second]->neuron_age << std::endl;
+		//std::cout << "\t corr: " << random_feature_correlations[id_pair] << "\t corr age: " << random_feature_correlations_ages[id_pair] << std::endl;
+		if (random_feature_correlations_ages[id_pair]++ > 10000 && corr < 0.85)
+			expired_pairs.push_back(id_pair);
+	}
+
+	//std::cout << "expired pairs: " << std::endl;
+	for (auto & id_pair : expired_pairs) {
+		//std::cout << intermediate_neurons[id_pair.first]->id << "\t->\t" << intermediate_neurons[id_pair.second]->id << "\t:\t" << feature_correlations[id_pair] << "\t age: " << intermediate_neurons[id_pair.first]->neuron_age << "-" << intermediate_neurons[id_pair.second]->neuron_age << std::endl;
+		//std::cout << "\t corr: " << random_feature_correlations[id_pair] << "\t corr age: " << random_feature_correlations_ages[id_pair] << std::endl;
+		random_feature_correlations.erase(id_pair);
+		random_feature_correlations_ages.erase(id_pair);
+	}
+
+	std::uniform_int_distribution<int> index_sampler(0, this->intermediate_neurons.size() - 1);
+	while (random_feature_correlations.size() < intermediate_neurons.size()) {
+		int i = index_sampler(mt);
+		int j = index_sampler(mt);
+		// ensure ordering of idxes in pairs so we dont have to check both
+		if (i == j)
+			continue;
+		if (i > j)
+			std::swap(i, j);
+
+		auto id_pair = std::make_pair(intermediate_neurons[i]->id, intermediate_neurons[j]->id);
+		if (random_feature_correlations.contains(id_pair) || (age_restriction && (intermediate_neurons[i]->neuron_age < 20000 || intermediate_neurons[j]->neuron_age < 20000)))
+			continue;
+		random_feature_correlations[id_pair] = 0;
+		random_feature_correlations_ages[id_pair] = 0;
+	}
+}
+
+
+std::vector<std::pair<float, std::string> > SingleLayerNetwork::replace_features_random_decorrelator(float perc_to_replace, bool sum_features, int min_estimation_age) {
 	std::vector<std::pair<float, std::string> > correlated_graphviz;
 	int max_replacements = int(prediction_weights.size() * perc_to_replace);
 	int replaced_counter = 0;
-	if (decorrelate) {
-		for (int i = 0; i < intermediate_neurons.size(); i++) {
-			for (int j = i+1; j < intermediate_neurons.size(); j++) {
-				auto id_pair = std::make_pair(intermediate_neurons[i]->id, intermediate_neurons[j]->id);
-				if (feature_correlations.contains(id_pair) && fabs(feature_correlations[id_pair]) > 0.85 && intermediate_neurons[i]->neuron_age > 20000 && intermediate_neurons[j]->neuron_age > 20000 ) {
-					correlated_graphviz.push_back(std::make_pair(feature_correlations[id_pair], get_graph(intermediate_neurons[i]->id, intermediate_neurons[j]->id)));
-					if (feature_utility_trace[i] <= feature_utility_trace[j]) {
-						if (sum_features)
-							prediction_weights[j] += prediction_weights[i]; //TODO assume single outgoing w
-						replace_features_with_idx(i);
-					}
-					else {
-						if (sum_features)
-							prediction_weights[i] += prediction_weights[j];
-						replace_features_with_idx(j);
-					}
-					replaced_counter += 1;
-					//std::cout << "replacing: " << i << "\t util: " << feature_utility_trace[i] << "\t new: " << median(feature_utility_trace) << "\t corr: " << feature_correlations[id_pair] << std::endl;
-					if (replaced_counter >= max_replacements)
-						return correlated_graphviz;
+	for (int i = 0; i < intermediate_neurons.size(); i++) {
+		for (int j = i+1; j < intermediate_neurons.size(); j++) {
+			auto id_pair = std::make_pair(intermediate_neurons[i]->id, intermediate_neurons[j]->id);
+			if (random_feature_correlations.contains(id_pair) && fabs(random_feature_correlations[id_pair]) > 0.85 && random_feature_correlations_ages[id_pair] > min_estimation_age && intermediate_neurons[i]->neuron_age > 20000 && intermediate_neurons[j]->neuron_age > 20000) {
+				correlated_graphviz.push_back(std::make_pair(random_feature_correlations[id_pair], get_graph(intermediate_neurons[i]->id, intermediate_neurons[j]->id)));
+				if (feature_utility_trace[i] <= feature_utility_trace[j]) {
+					if (sum_features)
+						prediction_weights[j] += prediction_weights[i];         //TODO assume single outgoing w
+					replace_features_with_idx(i);
 				}
+				else {
+					if (sum_features)
+						prediction_weights[i] += prediction_weights[j];
+					replace_features_with_idx(j);
+				}
+				replaced_counter += 1;
+				std::cout << "replacing: " << i << "\t util: " << feature_utility_trace[i] << "\t new: " << median(feature_utility_trace);
+				std::cout << "\t corr: " << random_feature_correlations[id_pair] << "\t corr age: " << random_feature_correlations_ages[id_pair] << std::endl;
+				if (replaced_counter >= max_replacements)
+					return correlated_graphviz;
+			}
+		}
+	}
+
+	while (replaced_counter < max_replacements) {
+		float least_useful_idx = min_idx(feature_utility_trace);
+		std::cout << "replacing: " << least_useful_idx << "\t util: " << feature_utility_trace[least_useful_idx] << "\t new: " << median(feature_utility_trace) << "\t non-corr replacement"<< std::endl;
+		replace_features_with_idx(least_useful_idx);
+		replaced_counter += 1;
+	}
+	return correlated_graphviz;
+}
+
+std::vector<std::pair<float, std::string> > SingleLayerNetwork::replace_features_n2_decorrelator(float perc_to_replace, bool sum_features) {
+	std::vector<std::pair<float, std::string> > correlated_graphviz;
+	int max_replacements = int(prediction_weights.size() * perc_to_replace);
+	int replaced_counter = 0;
+	for (int i = 0; i < intermediate_neurons.size(); i++) {
+		for (int j = i+1; j < intermediate_neurons.size(); j++) {
+			auto id_pair = std::make_pair(intermediate_neurons[i]->id, intermediate_neurons[j]->id);
+			if (feature_correlations.contains(id_pair) && fabs(feature_correlations[id_pair]) > 0.85 && intermediate_neurons[i]->neuron_age > 20000 && intermediate_neurons[j]->neuron_age > 20000 ) {
+				correlated_graphviz.push_back(std::make_pair(feature_correlations[id_pair], get_graph(intermediate_neurons[i]->id, intermediate_neurons[j]->id)));
+				if (feature_utility_trace[i] <= feature_utility_trace[j]) {
+					if (sum_features)
+						prediction_weights[j] += prediction_weights[i];         //TODO assume single outgoing w
+					replace_features_with_idx(i);
+				}
+				else {
+					if (sum_features)
+						prediction_weights[i] += prediction_weights[j];
+					replace_features_with_idx(j);
+				}
+				replaced_counter += 1;
+				//std::cout << "replacing: " << i << "\t util: " << feature_utility_trace[i] << "\t new: " << median(feature_utility_trace) << "\t corr: " << feature_correlations[id_pair] << std::endl;
+				if (replaced_counter >= max_replacements)
+					return correlated_graphviz;
 			}
 		}
 	}
@@ -253,112 +298,17 @@ std::vector<std::pair<float, std::string> > SingleLayerNetwork::replace_features
 	return correlated_graphviz;
 }
 
-//std::vector<std::pair<float, std::string>> SingleLayerNetwork::replace_features(float perc_to_replace, bool decorrelate, int sum_features) {
-//  std::vector<std::pair<float, std::string>> correlated_graphviz;
-//  std::uniform_real_distribution<float> weight_sampler(-1, 1);
-//  std::uniform_real_distribution<float> prob_sampler(0, 1);
-//  std::uniform_int_distribution<int> index_sampler(0, this->input_neurons.size() - 1);
-//  int max_replacements = int(prediction_weights.size() * perc_to_replace);
-//  int replaced_counter = 0;
-//  if (decorrelate){
-//    for (int i = 0; i < intermediate_neurons.size(); i++) {
-//      bool replaced = false;
-//      for (int j = i+1; j < intermediate_neurons.size(); j++) {
-//        if (replaced)
-//          continue;
-//        auto id_pair = std::make_pair(intermediate_neurons[i]->id, intermediate_neurons[j]->id);
-//        //TODO
-//        if (fabs(feature_correlations[id_pair]) > 0.85 && intermediate_neurons[i]->neuron_age > 20000 && intermediate_neurons[j]->neuron_age > 20000 ){
-//          correlated_graphviz.push_back(std::make_pair(feature_correlations[id_pair], get_graph(intermediate_neurons[i]->id, intermediate_neurons[j]->id)));
-//          if (sum_features)
-//            prediction_weights[j] += prediction_weights[i]; //TODO assume single outgoing w
-//          //std::cout << "replacing: " << i << "\t util: " << feature_utility_trace[i] << "\t new: " << median(feature_utility_trace) << "\t corr: " << feature_correlations[id_pair] << std::endl;
-//          replace_features_with_idx(i);
-//          replaced = true;
-//          replaced_counter += 1;
-//          if (replaced_counter >= max_replacements)
-//            return correlated_graphviz;
-//        }
-//      }
-//    }
-//  }
-//
-//  while (replaced_counter < max_replacements){
-//    float least_useful_idx = min_idx(feature_utility_trace);
-//    //std::cout << "replacing: " << least_useful_idx << "\t util: " << feature_utility_trace[least_useful_idx] << "\t new: " << median(feature_utility_trace) << "\t non-corr replacement"<< std::endl;
-//    replace_features_with_idx(least_useful_idx);
-//    replaced_counter += 1;
-//  }
-//  return correlated_graphviz;
-//}
-//
-
 void SingleLayerNetwork::replace_features(float perc_to_replace) {
-	std::uniform_real_distribution<float> weight_sampler(-1, 1);
-	std::uniform_real_distribution<float> prob_sampler(0, 1);
-	std::uniform_int_distribution<int> index_sampler(0, this->input_neurons.size() - 1);
-	float median_feature_utility = median(feature_utility_trace);
-	//std::vector<Neuron*> replaced_features;
+	int max_replacements = int(prediction_weights.size() * perc_to_replace);
+	int replaced_counter = 0;
 
-	for (int i = 0; i < int(prediction_weights.size() * perc_to_replace); i++) {
+	while (replaced_counter < max_replacements) {
 		float least_useful_idx = min_idx(feature_utility_trace);
-		//std::cout << "replacing: " << least_useful_idx << "\t util: " << feature_utility_trace[least_useful_idx] << "\t new: " << median_feature_utility << std::endl;
-		//replaced_features.push_back(intermediate_neurons[least_useful_feature_idx]); //TODO cleanup
-		for ( auto & synapse: this->intermediate_neurons[least_useful_idx]->incoming_synapses )
-			synapse->is_useless = true;
-
-		SigmoidNeuron *new_feature = new SigmoidNeuron(false, false);
-		this->intermediate_neurons[least_useful_idx] = new_feature;
-
-		std::set<int> connection_indices;
-		int max_connections = index_sampler(mt) + 1;
-		while (connection_indices.size() < max_connections) {
-			int new_index = index_sampler(mt);
-			if (connection_indices.contains(new_index))
-				continue;
-			connection_indices.insert(new_index);
-			float new_weight = weight_sampler(mt);
-			Synapse *new_synapse = new Synapse(this->input_neurons[new_index],
-			                                   new_feature,
-			                                   new_weight,
-			                                   step_size);
-			this->input_synapses.push_back(new_synapse);
-		}
-		prediction_weights[least_useful_idx] = 0;
-		prediction_weights_gradient[least_useful_idx] = 0;
-		feature_utility_trace[least_useful_idx] = median_feature_utility;
-		feature_mean[least_useful_idx] = 0;
-		feature_std[least_useful_idx] = 1;
-		for (int i = 0; i < intermediate_neurons.size(); i++) {
-			auto id_pair = std::make_pair(intermediate_neurons[i]->id, intermediate_neurons[least_useful_idx]->id);
-			feature_correlations.erase(id_pair);
-			id_pair = std::make_pair(intermediate_neurons[least_useful_idx]->id, intermediate_neurons[i]->id);
-			feature_correlations.erase(id_pair);
-		}
+		//std::cout << "replacing: " << least_useful_idx << "\t util: " << feature_utility_trace[least_useful_idx] << "\t new: " << median(feature_utility_trace) << "\t non-corr replacement"<< std::endl;
+		replace_features_with_idx(least_useful_idx);
+		replaced_counter += 1;
 	}
-
-	//cleanup
-	//for ( auto & feature : replaced_features) {
-	//  for ( auto & synapse: feature->incoming_synapses )
-	//    synapse->is_useless = true;
-
-	auto it = std::remove_if(this->input_synapses.begin(), this->input_synapses.end(), [](Synapse *s){
-		return s->is_useless;
-	});
-	this->input_synapses.erase(it, this->input_synapses.end());
-
-	std::for_each(
-		std::execution::seq,
-		this->input_neurons.begin(),
-		this->input_neurons.end(),
-		[&](Neuron *n) {
-		auto it = std::remove_if(n->outgoing_synapses.begin(), n->outgoing_synapses.end(), [](Synapse *s){
-			return s->is_useless;
-		});
-		n->outgoing_synapses.erase(it, n->outgoing_synapses.end());
-	});
 }
-
 
 
 float SingleLayerNetwork::forward(std::vector<float> inputs) {
@@ -410,20 +360,6 @@ float SingleLayerNetwork::forward(std::vector<float> inputs) {
 }
 
 
-void SingleLayerNetwork::calculate_all_correlations() {
-	//TODO the correlations map needs to be cleaned up for removed features
-	for (int i = 0; i < intermediate_neurons.size(); i++) {
-		for (int j = i; j < intermediate_neurons.size(); j++) {
-			auto id_pair = std::make_pair(intermediate_neurons[i]->id, intermediate_neurons[j]->id);
-			float i_normalizaed = (intermediate_neurons[i]->value - feature_mean[i]) / sqrt(feature_std[i]);
-			float j_normalizaed = (intermediate_neurons[j]->value - feature_mean[j]) / sqrt(feature_std[j]);
-			if (feature_correlations.count(id_pair))
-				feature_correlations[id_pair] = 0.999 * feature_correlations[id_pair] + 0.001 * i_normalizaed * j_normalizaed;
-			else
-				feature_correlations[id_pair] = 0.5;
-		}
-	}
-}
 
 void SingleLayerNetwork::print_all_correlations() {
 	std::cout << "feature correlations:" << std::endl;

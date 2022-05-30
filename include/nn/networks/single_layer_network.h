@@ -39,6 +39,11 @@ class SingleLayerNetwork {
 
   std::vector<float> prediction_weights_gradient;
 
+  std::map<int, int> id_to_idx; // intermediate_neurons[idx]->id to idx
+  std::map<std::pair<int, int>, float> feature_correlations;
+  std::map<std::pair<int, int>, float> random_feature_correlations;
+  std::map<std::pair<int, int>, int> random_feature_correlations_ages;
+
   float  get_target_without_sideeffects(std::vector<float> inputs);
 
   std::vector<Neuron*> input_neurons;
@@ -48,7 +53,8 @@ class SingleLayerNetwork {
   float read_output_values();
 
   void replace_features(float perc_to_replace);
-  std::vector<std::pair<float,std::string>> replace_features(float perc_to_replace, bool decorrelate, int sum_features);
+  std::vector<std::pair<float,std::string>> replace_features_n2_decorrelator(float perc_to_replace, bool sum_features);
+  std::vector<std::pair<float,std::string>> replace_features_random_decorrelator(float perc_to_replace, bool sum_features, int min_estimation_age);
 
   SingleLayerNetwork(float step_size, int seed, int no_of_input_features, int no_of_intermediate_features, bool is_target_network);
 
@@ -65,8 +71,8 @@ class SingleLayerNetwork {
   std::vector<float> get_prediction_gradients();
   std::vector<float> get_prediction_weights();
   std::vector<float> get_feature_utilities();
+  float get_normalized_value(int idx);
 
-  std::map<std::pair<int, int>, float> feature_correlations;
   void calculate_all_correlations();
   void print_all_correlations();
   void print_all_statistics();
@@ -74,7 +80,7 @@ class SingleLayerNetwork {
   void replace_features_with_idx(int feature_idx);
   void decorrelate_features_baseline(int sum_features);
 
-  void calculate_random_correlations();
+  void calculate_random_correlations(bool age_restriction);
   float get_normalized_values(int idx);
 
   std::string get_graph(int id1, int id2);
