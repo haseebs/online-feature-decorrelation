@@ -61,12 +61,12 @@ int main(int argc, char *argv[]) {
 	for (int step = 0; step < my_experiment.get_int_param("steps"); step++) {
 		if (step % my_experiment.get_int_param("replace_every") == 1) {
 			if (my_experiment.get_int_param("n2_decorrelate"))
-				graphs = learning_network.replace_features_n2_decorrelator(my_experiment.get_float_param("replace_perc"),
-				                                                           bool(my_experiment.get_int_param("sum_features")));
+				graphs = learning_network.replace_features_n2_decorrelator_v3(my_experiment.get_float_param("replace_perc"),
+                                                                      bool(my_experiment.get_int_param("sum_features")));
 			else if (my_experiment.get_int_param("random_decorrelate"))
 				graphs = learning_network.replace_features_random_decorrelator(my_experiment.get_float_param("replace_perc"),
-				                                                               bool(my_experiment.get_int_param("sum_features")),
-				                                                               my_experiment.get_int_param("min_estimation_age"));
+                                                                       bool(my_experiment.get_int_param("sum_features")),
+                                                                       my_experiment.get_int_param("min_estimation_age"));
 			else
 				learning_network.replace_features(my_experiment.get_float_param("replace_perc"));
 
@@ -90,11 +90,12 @@ int main(int argc, char *argv[]) {
 		learning_network.calculate_all_correlations();
 		if (my_experiment.get_int_param("random_decorrelate")) {
 			if ((my_experiment.get_int_param("age_restriction") && step > 25000) || !my_experiment.get_int_param("age_restriction"))
-				learning_network.calculate_random_correlations(bool(my_experiment.get_int_param("age_restriction")));
+				learning_network.calculate_random_correlations(bool(my_experiment.get_int_param("age_restriction")), my_experiment.get_int_param("min_estimation_age"));
 		}
 
 		learning_network.backward();
-		learning_network.update_parameters(error);
+		//learning_network.update_parameters(error);
+		learning_network.update_parameters_only_prediction(error);
 		if (step%5000 == 0) {// || step%5000 == 4999){
 			std::vector<std::string> cur_error;
 			cur_error.push_back(std::to_string(my_experiment.get_int_param("run")));

@@ -12,6 +12,8 @@
 #include "../dynamic_elem.h"
 #include "./neural_network.h"
 
+typedef std::pair<int,int> intpair;
+
 class SingleLayerNetwork {
  protected:
   int64_t time_step;
@@ -40,9 +42,9 @@ class SingleLayerNetwork {
   std::vector<float> prediction_weights_gradient;
 
   std::map<int, int> id_to_idx; // intermediate_neurons[idx]->id to idx
-  std::map<std::pair<int, int>, float> feature_correlations;
-  std::map<std::pair<int, int>, float> random_feature_correlations;
-  std::map<std::pair<int, int>, int> random_feature_correlations_ages;
+  std::map<intpair, float> feature_correlations;
+  std::map<intpair, float> random_feature_correlations;
+  std::map<intpair, int> random_feature_correlations_ages;
 
   float  get_target_without_sideeffects(std::vector<float> inputs);
 
@@ -54,6 +56,8 @@ class SingleLayerNetwork {
 
   void replace_features(float perc_to_replace);
   std::vector<std::pair<float,std::string>> replace_features_n2_decorrelator(float perc_to_replace, bool sum_features);
+  std::vector<std::pair<float,std::string>> replace_features_n2_decorrelator_v2(float perc_to_replace, bool sum_features);
+  std::vector<std::pair<float,std::string>> replace_features_n2_decorrelator_v3(float perc_to_replace, bool sum_features);
   std::vector<std::pair<float,std::string>> replace_features_random_decorrelator(float perc_to_replace, bool sum_features, int min_estimation_age);
 
   SingleLayerNetwork(float step_size, int seed, int no_of_input_features, int no_of_intermediate_features, bool is_target_network);
@@ -67,6 +71,7 @@ class SingleLayerNetwork {
   void backward();
 
   void update_parameters(float error);
+  void update_parameters_only_prediction(float error);
 
   std::vector<float> get_prediction_gradients();
   std::vector<float> get_prediction_weights();
@@ -80,7 +85,7 @@ class SingleLayerNetwork {
   void replace_features_with_idx(int feature_idx);
   void decorrelate_features_baseline(int sum_features);
 
-  void calculate_random_correlations(bool age_restriction);
+  void calculate_random_correlations(bool age_restriction, int min_estimation_age);
   float get_normalized_values(int idx);
 
   std::string get_graph(int id1, int id2);
