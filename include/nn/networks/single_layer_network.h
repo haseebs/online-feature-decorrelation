@@ -59,6 +59,7 @@ class SingleLayerNetwork {
   std::vector<std::pair<float,std::string>> replace_features_n2_decorrelator_v2(float perc_to_replace, bool sum_features);
   std::vector<std::pair<float,std::string>> replace_features_n2_decorrelator_v3(float perc_to_replace, bool sum_features);
   std::vector<std::pair<float,std::string>> replace_features_random_decorrelator(float perc_to_replace, bool sum_features, int min_estimation_age);
+  std::vector<std::pair<float,std::string>> replace_features_random_decorrelator_v3(float perc_to_replace, bool sum_features, int min_estimation_age);
 
   SingleLayerNetwork(float step_size, int seed, int no_of_input_features, int no_of_intermediate_features, bool is_target_network);
 
@@ -85,7 +86,7 @@ class SingleLayerNetwork {
   void replace_features_with_idx(int feature_idx);
   void decorrelate_features_baseline(int sum_features);
 
-  void calculate_random_correlations(bool age_restriction, int min_estimation_age);
+  void calculate_random_correlations(bool age_restriction, int max_estimation_age);
   float get_normalized_values(int idx);
 
   std::string get_graph(int id1, int id2);

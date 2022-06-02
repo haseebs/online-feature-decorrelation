@@ -64,9 +64,9 @@ int main(int argc, char *argv[]) {
 				graphs = learning_network.replace_features_n2_decorrelator_v3(my_experiment.get_float_param("replace_perc"),
                                                                       bool(my_experiment.get_int_param("sum_features")));
 			else if (my_experiment.get_int_param("random_decorrelate"))
-				graphs = learning_network.replace_features_random_decorrelator(my_experiment.get_float_param("replace_perc"),
-                                                                       bool(my_experiment.get_int_param("sum_features")),
-                                                                       my_experiment.get_int_param("min_estimation_age"));
+				graphs = learning_network.replace_features_random_decorrelator_v3(my_experiment.get_float_param("replace_perc"),
+                                                                          bool(my_experiment.get_int_param("sum_features")),
+                                                                          my_experiment.get_int_param("min_estimation_age"));
 			else
 				learning_network.replace_features(my_experiment.get_float_param("replace_perc"));
 
@@ -90,7 +90,7 @@ int main(int argc, char *argv[]) {
 		learning_network.calculate_all_correlations();
 		if (my_experiment.get_int_param("random_decorrelate")) {
 			if ((my_experiment.get_int_param("age_restriction") && step > 25000) || !my_experiment.get_int_param("age_restriction"))
-				learning_network.calculate_random_correlations(bool(my_experiment.get_int_param("age_restriction")), my_experiment.get_int_param("min_estimation_age"));
+				learning_network.calculate_random_correlations(bool(my_experiment.get_int_param("age_restriction")), my_experiment.get_int_param("max_estimation_age"));
 		}
 
 		learning_network.backward();
