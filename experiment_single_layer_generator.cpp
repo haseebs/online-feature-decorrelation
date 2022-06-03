@@ -65,8 +65,9 @@ int main(int argc, char *argv[]) {
                                                                       bool(my_experiment.get_int_param("sum_features")));
 			else if (my_experiment.get_int_param("random_decorrelate"))
 				graphs = learning_network.replace_features_random_decorrelator_v3(my_experiment.get_float_param("replace_perc"),
-                                                                          bool(my_experiment.get_int_param("sum_features")),
-                                                                          my_experiment.get_int_param("min_estimation_age"));
+                                                                          bool(my_experiment.get_int_param("sum_features")));
+      else if (my_experiment.get_int_param("random_replacement"))
+				learning_network.replace_features_randomly(my_experiment.get_float_param("replace_perc"));
 			else
 				learning_network.replace_features(my_experiment.get_float_param("replace_perc"));
 
@@ -76,7 +77,8 @@ int main(int argc, char *argv[]) {
 				cur_graphs.push_back(std::to_string(step));
 				cur_graphs.push_back(std::to_string(counter++));
 				cur_graphs.push_back(std::to_string(graph.first));
-				cur_graphs.push_back(graph.second);
+				//cur_graphs.push_back(graph.second);
+				cur_graphs.push_back("NA");
 				correlation_metric.record_value(cur_graphs);
 			}
 		}
@@ -90,7 +92,9 @@ int main(int argc, char *argv[]) {
 		learning_network.calculate_all_correlations();
 		if (my_experiment.get_int_param("random_decorrelate")) {
 			if ((my_experiment.get_int_param("age_restriction") && step > 25000) || !my_experiment.get_int_param("age_restriction"))
-				learning_network.calculate_random_correlations(bool(my_experiment.get_int_param("age_restriction")), my_experiment.get_int_param("max_estimation_age"));
+        if (step % my_experiment.get_int_param("min_estimation_period") == 1) //update the random corr selections 
+          learning_network.update_random_correlation_selections(bool(my_experiment.get_int_param("age_restriction")));
+				learning_network.calculate_random_correlations(); // update the random corr values
 		}
 
 		learning_network.backward();
@@ -115,8 +119,10 @@ int main(int argc, char *argv[]) {
 			std::cout << "total unremovable correlated features: " << learning_network.count_highly_correlated_features() << std::endl;
 		}
 		learning_network.zero_grad();
-		error_metric.commit_values();
-		correlation_metric.commit_values();
+    if (step % 100000 == 1){
+      error_metric.commit_values();
+      correlation_metric.commit_values();
+    }
 	}
 	std::vector<std::string> cur_error;
 	cur_error.push_back(std::to_string(my_experiment.get_int_param("run")));
@@ -124,5 +130,7 @@ int main(int argc, char *argv[]) {
 	cur_error.push_back(std::to_string(learning_network.count_highly_correlated_features()));
 	summary_metric.record_value(cur_error);
 	summary_metric.commit_values();
+  error_metric.commit_values();
+  correlation_metric.commit_values();
 	learning_vis.generate_dot(my_experiment.get_int_param("steps"));
 }
