@@ -1,0 +1,1 @@
+./SingleLayerGenerator --step_size 0.008 --seed 0 --n_inputs 5 --n_distractors 0 --n_target_features 10 --n_learner_features 50 --replace_every 5000 --n2_decorrelate 0 --random_decorrelate 1 --sum_features 0 --random_replacement 0 --replace_perc 0.20 --steps 1000001 --age_restriction 0 --min_estimation_period 5000 --name 0294_decor_test --run 2
