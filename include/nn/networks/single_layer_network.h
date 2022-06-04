@@ -13,6 +13,7 @@
 #include "./neural_network.h"
 
 typedef std::pair<int,int> intpair;
+typedef std::pair<float,float> floatpair;
 
 class SingleLayerNetwork {
  protected:
@@ -56,11 +57,8 @@ class SingleLayerNetwork {
 
   void replace_features(float perc_to_replace);
   void replace_features_randomly(float perc_to_replace);
-  std::vector<std::pair<float,std::string>> replace_features_n2_decorrelator(float perc_to_replace, bool sum_features);
-  std::vector<std::pair<float,std::string>> replace_features_n2_decorrelator_v2(float perc_to_replace, bool sum_features);
-  std::vector<std::pair<float,std::string>> replace_features_n2_decorrelator_v3(float perc_to_replace, bool sum_features);
-  std::vector<std::pair<float,std::string>> replace_features_random_decorrelator(float perc_to_replace, bool sum_features, int min_estimation_age);
-  std::vector<std::pair<float,std::string>> replace_features_random_decorrelator_v3(float perc_to_replace, bool sum_features);
+  std::vector<std::pair<floatpair,std::string>> replace_features_n2_decorrelator_v3(float perc_to_replace, bool sum_features);
+  std::vector<std::pair<floatpair,std::string>> replace_features_random_decorrelator_v3(float perc_to_replace, bool sum_features);
 
   SingleLayerNetwork(float step_size, int seed, int no_of_input_features, int no_of_intermediate_features, bool is_target_network);
 
@@ -84,6 +82,7 @@ class SingleLayerNetwork {
   void print_all_correlations();
   void print_all_statistics();
   int count_highly_correlated_features();
+  int count_mature_features();
   void replace_features_with_idx(int feature_idx);
   void decorrelate_features_baseline(int sum_features);
 
