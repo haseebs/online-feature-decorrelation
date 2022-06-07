@@ -86,7 +86,7 @@ class SingleLayerNetwork {
   void replace_features_with_idx(int feature_idx);
   void decorrelate_features_baseline(int sum_features);
 
-  void calculate_random_correlations();
+  void calculate_random_correlations(int min_estimation_period);
   void update_random_correlation_selections(bool age_restriction);
   float get_normalized_values(int idx);
 

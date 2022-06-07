@@ -225,10 +225,11 @@ void SingleLayerNetwork::update_random_correlation_selections(bool age_restricti
 	}
 }
 
-void SingleLayerNetwork::calculate_random_correlations(){
+void SingleLayerNetwork::calculate_random_correlations(int min_estimation_period){
 	//std::cout << "all pairs: " << std::endl;
+  float alpha = 5 * ( 1 / min_estimation_period ); // the step size here should be dependent on how long we estimate for
 	for (auto & [id_pair, corr] : random_feature_correlations) {
-		corr = 0.999 * corr + 0.001 * get_normalized_value(id_to_idx[id_pair.first]) * get_normalized_value(id_to_idx[id_pair.second]);
+		corr = (1 - alpha) * corr + alpha * get_normalized_value(id_to_idx[id_pair.first]) * get_normalized_value(id_to_idx[id_pair.second]);
 		random_feature_correlations_ages[id_pair]++;
 		//std::cout << intermediate_neurons[id_pair.first]->id << "\t->\t" << intermediate_neurons[id_pair.second]->id << "\t:\t" << feature_correlations[id_pair] << "\t age: " << intermediate_neurons[id_pair.first]->neuron_age << "-" << intermediate_neurons[id_pair.second]->neuron_age << std::endl;
 		//std::cout << "\t corr: " << random_feature_correlations[id_pair] << "\t corr age: " << random_feature_correlations_ages[id_pair] << std::endl;
