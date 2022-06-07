@@ -95,7 +95,7 @@ int main(int argc, char *argv[]) {
 			if ((my_experiment->get_int_param("age_restriction") && step > 25000) || !my_experiment->get_int_param("age_restriction")) {
 				if (step % my_experiment->get_int_param("min_estimation_period") == 1) //update the random corr selections
 					learning_network.update_random_correlation_selections(bool(my_experiment->get_int_param("age_restriction")));
-				learning_network.calculate_random_correlations(); // update the random corr values
+				learning_network.calculate_random_correlations(my_experiment->get_int_param("min_estimation_period")); // update the random corr values
 			}
 		}
 
