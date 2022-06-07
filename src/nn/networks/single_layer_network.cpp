@@ -79,6 +79,7 @@ SingleLayerNetwork::SingleLayerNetwork(float step_size,
 }
 
 std::string SingleLayerNetwork::get_graph(int id1, int id2) {
+  return "NA";
 	std::string dot_string = "digraph network{\n"
 	                         "\tnode [shape = circle];\n";
 
