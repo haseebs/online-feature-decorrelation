@@ -79,7 +79,7 @@ SingleLayerNetwork::SingleLayerNetwork(float step_size,
 }
 
 std::string SingleLayerNetwork::get_graph(int id1, int id2) {
-  return "NA";
+	return "NA";
 	std::string dot_string = "digraph network{\n"
 	                         "\tnode [shape = circle];\n";
 
@@ -227,7 +227,7 @@ void SingleLayerNetwork::update_random_correlation_selections(bool age_restricti
 
 void SingleLayerNetwork::calculate_random_correlations(int min_estimation_period){
 	//std::cout << "all pairs: " << std::endl;
-  float alpha = 5 * ( 1 / min_estimation_period ); // the step size here should be dependent on how long we estimate for
+	float alpha = 5 * ( 1 / min_estimation_period ); // the step size here should be dependent on how long we estimate for
 	for (auto & [id_pair, corr] : random_feature_correlations) {
 		corr = (1 - alpha) * corr + alpha * get_normalized_value(id_to_idx[id_pair.first]) * get_normalized_value(id_to_idx[id_pair.second]);
 		random_feature_correlations_ages[id_pair]++;
@@ -539,6 +539,16 @@ std::vector<float> SingleLayerNetwork::get_prediction_weights() {
 	my_vec.reserve(prediction_weights.size());
 	for (int index = 0; index < prediction_weights.size(); index++) {
 		my_vec.push_back(prediction_weights[index]);
+	}
+	return my_vec;
+}
+
+std::vector< std::pair < float, int >> SingleLayerNetwork::get_prediction_weight_statistics(){
+	std::vector<std::pair < float, int>> my_vec;
+	my_vec.reserve(prediction_weights.size());
+	for (int index = 0; index < prediction_weights.size(); index++) {
+    auto new_pair = std::make_pair(prediction_weights[index], intermediate_neurons[index]->neuron_age);
+		my_vec.push_back(new_pair);
 	}
 	return my_vec;
 }

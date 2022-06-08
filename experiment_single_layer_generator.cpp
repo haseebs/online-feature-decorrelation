@@ -31,6 +31,22 @@ int main(int argc, char *argv[]) {
 	                               std::vector < std::string > {"int", "real", "int", "int"},
 	                               std::vector < std::string > {"run"});
 
+  std::vector<std::string> weight_col_names{ "run", "step"};
+  std::vector<std::string> weight_col_types{ "int", "int"};
+  for (int i = 0; i < my_experiment->get_int_param("n_learner_features"); i++) {
+    weight_col_names.push_back("f" + std::to_string(i));
+    weight_col_types.push_back("real");
+  }
+
+  for (int i = 0; i < my_experiment->get_int_param("n_learner_features"); i++) {
+    weight_col_names.push_back("age" + std::to_string(i));
+    weight_col_types.push_back("int");
+  }
+	Metric weight_metric = Metric(my_experiment->database_name, "weights_table",
+                                 weight_col_names,
+                                 weight_col_types,
+	                               std::vector < std::string > {"run", "step"});
+
 	std::cout << "Program started \n";
 
 	std::mt19937 mt(my_experiment->get_int_param("seed"));
@@ -84,6 +100,18 @@ int main(int argc, char *argv[]) {
 			}
 		}
 
+    if ( true && step % 1000 == 1 ) {
+      std::vector<std::string> cur_weights;
+      cur_weights.push_back(std::to_string(my_experiment->get_int_param("run")));
+      cur_weights.push_back(std::to_string(step));
+      auto current_weights = learning_network.get_prediction_weight_statistics();
+      for (const auto &weight : current_weights)
+        cur_weights.push_back(std::to_string(weight.first));
+      for (const auto &weight : current_weights)
+        cur_weights.push_back(std::to_string(weight.second));
+      weight_metric.record_value(cur_weights);
+    }
+
 		auto input = input_sampler.get_random_vector(total_inputs);
 		float pred = learning_network.forward(input);
 		float target = target_network.forward(input);
@@ -126,6 +154,7 @@ int main(int argc, char *argv[]) {
 		if (step % 100000 == 1) {
 			error_metric.commit_values();
 			correlation_metric.commit_values();
+			weight_metric.commit_values();
 		}
 	}
 	std::vector<std::string> cur_error;
@@ -137,5 +166,6 @@ int main(int argc, char *argv[]) {
 	summary_metric.commit_values();
 	error_metric.commit_values();
 	correlation_metric.commit_values();
+  weight_metric.commit_values();
 	learning_vis.generate_dot(my_experiment->get_int_param("steps"));
 }

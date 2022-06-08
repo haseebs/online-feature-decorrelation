@@ -85,6 +85,7 @@ class SingleLayerNetwork {
   int count_mature_features();
   void replace_features_with_idx(int feature_idx);
   void decorrelate_features_baseline(int sum_features);
+  std::vector< std::pair < float, int >> get_prediction_weight_statistics();
 
   void calculate_random_correlations(int min_estimation_period);
   void update_random_correlation_selections(bool age_restriction);
