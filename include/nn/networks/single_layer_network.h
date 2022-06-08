@@ -89,6 +89,7 @@ class SingleLayerNetwork {
 
   void calculate_random_correlations(int min_estimation_period);
   void update_random_correlation_selections(bool age_restriction);
+  void update_random_correlation_selections_using_thresh(bool age_restriction);
   float get_normalized_values(int idx);
 
   std::string get_graph(int id1, int id2);

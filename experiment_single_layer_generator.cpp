@@ -79,7 +79,7 @@ int main(int argc, char *argv[]) {
 			if (my_experiment->get_int_param("n2_decorrelate"))
 				graphs = learning_network.replace_features_n2_decorrelator_v3(my_experiment->get_float_param("replace_perc"),
 				                                                              bool(my_experiment->get_int_param("sum_features")));
-			else if (my_experiment->get_int_param("random_decorrelate"))
+			else if (my_experiment->get_int_param("random_decorrelate") || my_experiment->get_int_param("random_thresh_decorrelate"))
 				graphs = learning_network.replace_features_random_decorrelator_v3(my_experiment->get_float_param("replace_perc"),
 				                                                                  bool(my_experiment->get_int_param("sum_features")));
 			else if (my_experiment->get_int_param("random_replacement"))
@@ -100,7 +100,7 @@ int main(int argc, char *argv[]) {
 			}
 		}
 
-    if ( true && step % 1000 == 1 ) {
+    if ( false && step % 1000 == 1 ) {
       std::vector<std::string> cur_weights;
       cur_weights.push_back(std::to_string(my_experiment->get_int_param("run")));
       cur_weights.push_back(std::to_string(step));
@@ -119,10 +119,20 @@ int main(int argc, char *argv[]) {
 
 		running_error = 0.995 * running_error + 0.005 * (target - pred) * (target - pred);
 		learning_network.calculate_all_correlations();
+
 		if (my_experiment->get_int_param("random_decorrelate")) {
 			if ((my_experiment->get_int_param("age_restriction") && step > 25000) || !my_experiment->get_int_param("age_restriction")) {
 				if (step % my_experiment->get_int_param("min_estimation_period") == 1) //update the random corr selections
 					learning_network.update_random_correlation_selections(bool(my_experiment->get_int_param("age_restriction")));
+				learning_network.calculate_random_correlations(my_experiment->get_int_param("min_estimation_period")); // update the random corr values
+			}
+		}
+
+    // same random decorrelator as above but sampling based on correlations based on a single sample
+		if (my_experiment->get_int_param("random_thresh_decorrelate")) {
+			if ((my_experiment->get_int_param("age_restriction") && step > 25000) || !my_experiment->get_int_param("age_restriction")) {
+				if (step % my_experiment->get_int_param("min_estimation_period") == 1) //update the random corr selections
+					learning_network.update_random_correlation_selections_using_thresh(bool(my_experiment->get_int_param("age_restriction")));
 				learning_network.calculate_random_correlations(my_experiment->get_int_param("min_estimation_period")); // update the random corr values
 			}
 		}
