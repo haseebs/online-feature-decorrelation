@@ -361,7 +361,8 @@ std::vector<std::pair<floatpair, std::string> > SingleLayerNetwork::replace_feat
 	std::vector<std::pair<floatpair, std::string> > correlated_graphviz;
 	int max_replacements = int(prediction_weights.size() * perc_to_replace);
 	int replaced_counter = 0;
-	int max_correlated_replacements = 2;
+	//int max_correlated_replacements = 2;
+  int max_correlated_replacements = max(1, int(max_replacements * 0.20));
 
 	for (int i = 0; i < intermediate_neurons.size(); i++) {
 		for (int j = i+1; j < intermediate_neurons.size(); j++) {

@@ -33,7 +33,19 @@ add_executable(SingleLayerGenerator include/experiment/Experiment.h src/experime
         src/nn/dynamic_elem.cpp src/nn/message.cpp src/nn/neuron.cpp src/nn/synapse.cpp
         experiment_single_layer_generator.cpp)
 
+add_executable(LearnAll include/experiment/Experiment.h src/experiment/Experiment.cpp include/experiment/Database.h
+        src/experiment/Database.cpp include/experiment/Metric.h src/experiment/Metric.cpp
+        src/utils.cpp include/utils.h src/nn/utils.cpp include/nn/utils.h
+        include/nn/networks/neural_network.h include/nn/networks/single_layer_network.h
+        src/nn/networks/neural_network.cpp src/nn/networks/single_layer_network.cpp
+        include/nn/dynamic_elem.h include/nn/message.h include/nn/neuron.h include/nn/synapse.h
+        src/nn/dynamic_elem.cpp src/nn/message.cpp src/nn/neuron.cpp src/nn/synapse.cpp
+        experiment_learn_all.cpp)
+
 target_link_libraries(SingleLayerGenerator PUBLIC tbb)
 target_link_libraries(SingleLayerGenerator PUBLIC mariadb)
+
+target_link_libraries(LearnAll PUBLIC tbb)
+target_link_libraries(LearnAll PUBLIC mariadb)
 
 Project(OnlineFeatureDecorrelation LANGUAGES CXX)
