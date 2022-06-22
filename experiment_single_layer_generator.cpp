@@ -78,10 +78,12 @@ int main(int argc, char *argv[]) {
 		if (step % my_experiment->get_int_param("replace_every") == 1) {
 			if (my_experiment->get_int_param("n2_decorrelate"))
 				graphs = learning_network.replace_features_n2_decorrelator_v3(my_experiment->get_float_param("replace_perc"),
-				                                                              bool(my_experiment->get_int_param("sum_features")));
+				                                                              bool(my_experiment->get_int_param("sum_features")),
+                                                                      my_experiment->get_float_param("decorrelate_perc"));
 			else if (my_experiment->get_int_param("random_decorrelate") || my_experiment->get_int_param("random_thresh_decorrelate"))
 				graphs = learning_network.replace_features_random_decorrelator_v3(my_experiment->get_float_param("replace_perc"),
-				                                                                  bool(my_experiment->get_int_param("sum_features")));
+				                                                                  bool(my_experiment->get_int_param("sum_features")),
+                                                                          my_experiment->get_float_param("decorrelate_perc"));
 			else if (my_experiment->get_int_param("random_replacement"))
 				learning_network.replace_features_randomly(my_experiment->get_float_param("replace_perc"));
 			else
@@ -123,7 +125,8 @@ int main(int argc, char *argv[]) {
 		if (my_experiment->get_int_param("random_decorrelate")) {
 			if ((my_experiment->get_int_param("age_restriction") && step > 25000) || !my_experiment->get_int_param("age_restriction")) {
 				if (step % my_experiment->get_int_param("min_estimation_period") == 1) //update the random corr selections
-					learning_network.update_random_correlation_selections(bool(my_experiment->get_int_param("age_restriction")));
+					learning_network.update_random_correlation_selections(bool(my_experiment->get_int_param("age_restriction")),
+                                                                my_experiment->get_float_param("perc_of_total_pairs_to_estimate"));
 				learning_network.calculate_random_correlations(my_experiment->get_int_param("min_estimation_period")); // update the random corr values
 			}
 		}

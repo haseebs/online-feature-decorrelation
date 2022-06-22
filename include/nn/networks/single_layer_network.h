@@ -19,6 +19,7 @@ class SingleLayerNetwork {
  protected:
   int64_t time_step;
   std::mt19937 mt;
+  std::mt19937 second_mt;
 
  public:
 //
@@ -57,8 +58,8 @@ class SingleLayerNetwork {
 
   void replace_features(float perc_to_replace);
   void replace_features_randomly(float perc_to_replace);
-  std::vector<std::pair<floatpair,std::string>> replace_features_n2_decorrelator_v3(float perc_to_replace, bool sum_features);
-  std::vector<std::pair<floatpair,std::string>> replace_features_random_decorrelator_v3(float perc_to_replace, bool sum_features);
+  std::vector<std::pair<floatpair,std::string>> replace_features_n2_decorrelator_v3(float perc_to_replace, bool sum_features, float perc_to_decorrelate);
+  std::vector<std::pair<floatpair,std::string>> replace_features_random_decorrelator_v3(float perc_to_replace, bool sum_features, float perc_to_decorrelate);
 
   SingleLayerNetwork(float step_size, int seed, int no_of_input_features, int no_of_intermediate_features, bool is_target_network);
 
@@ -88,7 +89,7 @@ class SingleLayerNetwork {
   std::vector< std::pair < float, int >> get_prediction_weight_statistics();
 
   void calculate_random_correlations(int min_estimation_period);
-  void update_random_correlation_selections(bool age_restriction);
+  void update_random_correlation_selections(bool age_restriction, float perc_of_total_pairs_to_estimate );
   void update_random_correlation_selections_using_thresh(bool age_restriction);
   float get_normalized_values(int idx);
 
