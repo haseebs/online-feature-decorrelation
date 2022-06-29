@@ -17,6 +17,7 @@ SingleLayerNetwork::SingleLayerNetwork(float step_size,
 	this->std_cap = 0.001;
 	this->mt.seed(seed);
 	this->second_mt.seed(seed+9999);
+	this->third_mt.seed(seed+99999);
 	std::uniform_real_distribution<float> weight_sampler(-1, 1);
 	std::uniform_real_distribution<float> prob_sampler(0, 1);
 	std::uniform_int_distribution<int> index_sampler(0, no_of_input_features-1);
@@ -357,24 +358,30 @@ std::vector<std::pair<floatpair, std::string> > SingleLayerNetwork::replace_feat
 
 	if (id_pair_correlations.size()) {
 		//TODO iterative maxing should be faster
-		std::sort(id_pair_correlations.begin(),
-		          id_pair_correlations.end(),
-		          []( const std::pair<intpair, float> &a, const std::pair<intpair, float> &b ) {
-			return fabs(a.second) > fabs(b.second);
-		} );
+		//std::sort(id_pair_correlations.begin(),
+		//          id_pair_correlations.end(),
+		//          []( const std::pair<intpair, float> &a, const std::pair<intpair, float> &b ) {
+		//	return fabs(a.second) > fabs(b.second);
+		//} );
+
+    // no sorting to get rid of maximization bias, we just randomly sample above threshold
+    std::uniform_int_distribution<int> corr_index_sampler(0, id_pair_correlations.size() - 1);
+
 		//std::cout << "Sorted correlations : " << id_pair_correlations.size() << std::endl;
 		//for (auto const &i : id_pair_correlations) {
 		//  std::cout << id_to_idx[i.first.first] << "(" << intermediate_neurons[id_to_idx[i.first.first]]->neuron_age << ")" << "->" << id_to_idx[i.first.second] << "(" << intermediate_neurons[id_to_idx[i.first.second]]->neuron_age << ")" << ":" << i.second;
 		//  std::cout << " true corr: " << feature_correlations[i.first] << " est age: " << random_feature_correlations_ages[i.first] << std::endl;
 		//}
+
 		for (int c = 0; c < max_correlated_replacements; c++) {
 			(void)c;
-			auto id_pair = id_pair_correlations[0].first;
+			auto id_pair = id_pair_correlations[corr_index_sampler(this->third_mt)].first;
 			int replaced_idx;
 			int i = id_to_idx[id_pair.first];
 			int j = id_to_idx[id_pair.second];
 			floatpair corr = std::make_pair(feature_correlations[id_pair], random_feature_correlations[id_pair]);
-			correlated_graphviz.push_back(std::make_pair(corr, get_graph(id_pair.first, id_pair.second))); //NOTE: this graph contains actual (not random) correlation est
+			//correlated_graphviz.push_back(std::make_pair(corr, get_graph(id_pair.first, id_pair.second))); //NOTE: this graph contains actual (not random) correlation est
+			correlated_graphviz.push_back(std::make_pair(corr, "NA"));
 			if (feature_utility_trace[i] <= feature_utility_trace[j]) {
 				if (sum_features)
 					prediction_weights[j] += prediction_weights[i]; //TODO assume single outgoing w
@@ -390,8 +397,8 @@ std::vector<std::pair<floatpair, std::string> > SingleLayerNetwork::replace_feat
 				replaced_idx = id_pair.second;
 			}
 			replaced_counter += 1;
-			if (replaced_counter >= max_correlated_replacements)
-				break;
+			//if (replaced_counter >= max_correlated_replacements)
+			//	break;
 			auto it = std::remove_if(id_pair_correlations.begin(),
 			                         id_pair_correlations.end(),
 			                         [&replaced_idx](const std::pair<intpair, float> &a){
@@ -419,6 +426,7 @@ std::vector<std::pair<floatpair, std::string> > SingleLayerNetwork::replace_feat
 	int replaced_counter = 0;
 	//int max_correlated_replacements = 2;
   int max_correlated_replacements = max(1, int(max_replacements * perc_to_decorrelate));
+  std::cout << max_correlated_replacements << " <- max corr reps " << std::endl;
 
   // magnitude tester -> decorrelator -> magnitude tester if still needed
 	while (replaced_counter < (max_replacements - max_correlated_replacements)) {
@@ -438,24 +446,28 @@ std::vector<std::pair<floatpair, std::string> > SingleLayerNetwork::replace_feat
 
 	if (id_pair_correlations.size()) {
 		//TODO iterative maxing should be faster
-		std::sort(id_pair_correlations.begin(),
-		          id_pair_correlations.end(),
-		          []( const std::pair<intpair, float> &a, const std::pair<intpair, float> &b ) {
-			return fabs(a.second) > fabs(b.second);
-		} );
-		std::cout << "Sorted correlations : " << std::endl;
+		//std::sort(id_pair_correlations.begin(),
+		//          id_pair_correlations.end(),
+		//          []( const std::pair<intpair, float> &a, const std::pair<intpair, float> &b ) {
+		//	return fabs(a.second) > fabs(b.second);
+		//} );
+
+    // no sorting to get rid of maximization bias, we just randomly sample above threshold
+    std::uniform_int_distribution<int> corr_index_sampler(0, id_pair_correlations.size() - 1);
+		//std::cout << "Sorted correlations : " << std::endl;
 		//for (auto const &i : id_pair_correlations) {
 		//	if (fabs(i.second) >0.85)
 		//		std::cout << id_to_idx[i.first.first] << "(" << intermediate_neurons[id_to_idx[i.first.first]]->neuron_age << ")" << "->" << id_to_idx[i.first.second] << "(" << intermediate_neurons[id_to_idx[i.first.second]]->neuron_age << ")" << ":" << i.second << std::endl;
 		//}
 		for (int c = 0; c < max_correlated_replacements; c++) {
 			(void)c;
-			auto id_pair = id_pair_correlations[0].first;
+			auto id_pair = id_pair_correlations[corr_index_sampler(this->third_mt)].first;
 			int replaced_idx;
 			int i = id_to_idx[id_pair.first];
 			int j = id_to_idx[id_pair.second];
 			floatpair corr = std::make_pair(feature_correlations[id_pair], feature_correlations[id_pair]);
-			correlated_graphviz.push_back(std::make_pair(corr, get_graph(id_pair.first, id_pair.second)));
+			//correlated_graphviz.push_back(std::make_pair(corr, get_graph(id_pair.first, id_pair.second)));
+			correlated_graphviz.push_back(std::make_pair(corr, "NA"));
 			if (feature_utility_trace[i] <= feature_utility_trace[j]) {
 				if (sum_features)
 					prediction_weights[j] += prediction_weights[i]; //TODO assume single outgoing w
@@ -471,8 +483,8 @@ std::vector<std::pair<floatpair, std::string> > SingleLayerNetwork::replace_feat
 				replaced_idx = id_pair.second;
 			}
 			replaced_counter += 1;
-			if (replaced_counter >= max_correlated_replacements)
-				break;
+			//if (replaced_counter >= max_correlated_replacements)
+			//	break;
 			auto it = std::remove_if(id_pair_correlations.begin(),
 			                         id_pair_correlations.end(),
 			                         [&replaced_idx](const std::pair<intpair, float> &a){

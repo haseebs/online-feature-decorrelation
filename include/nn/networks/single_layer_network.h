@@ -20,6 +20,7 @@ class SingleLayerNetwork {
   int64_t time_step;
   std::mt19937 mt;
   std::mt19937 second_mt;
+  std::mt19937 third_mt;
 
  public:
 //
