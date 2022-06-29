@@ -701,6 +701,13 @@ void SingleLayerNetwork::update_parameters_only_prediction(float error) {
 		prediction_weights[index] += prediction_weights_gradient[index] * error * step_size;
 }
 
+void SingleLayerNetwork::update_parameters_only_prediction(float error, float l2_lambda, float l1_lambda) {
+	//TODO assumes single outgoing weight from interm neuron
+	for (int index = 0; index < prediction_weights.size(); index++)
+		//prediction_weights[index] += step_size * (error * prediction_weights_gradient[index] - l2_lambda * prediction_weights[index] - l1_lambda * (fabs(prediction_weights[index])/prediction_weights[index]));
+		prediction_weights[index] += step_size * (error * prediction_weights_gradient[index] - l2_lambda * prediction_weights[index]);
+}
+
 void SingleLayerNetwork::update_parameters(float error) {
 	//TODO assumes single outgoing weight from interm neuron
 	for (int index = 0; index < intermediate_neurons.size(); index++) {

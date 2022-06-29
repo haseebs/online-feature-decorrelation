@@ -74,6 +74,7 @@ class SingleLayerNetwork {
 
   void update_parameters(float error);
   void update_parameters_only_prediction(float error);
+  void update_parameters_only_prediction(float error, float l2_lambda, float l1_lambda);
 
   std::vector<float> get_prediction_gradients();
   std::vector<float> get_prediction_weights();
