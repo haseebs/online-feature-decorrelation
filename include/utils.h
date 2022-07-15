@@ -12,6 +12,7 @@
 #include <vector>
 #include <iomanip>
 #include "nn/networks/single_layer_network.h"
+#include "nn/networks/dense_network.h"
 
 
 template <class T>
@@ -46,10 +47,10 @@ const &v);
 
 class NetworkVisualizer {
   std::string dot_string;
-  SingleLayerNetwork *network;
+  DenseNetwork *network;
 
  public:
-  explicit NetworkVisualizer(SingleLayerNetwork *network);
+  explicit NetworkVisualizer(DenseNetwork *network);
 
   void generate_dot(int time_step);
   std::string get_graph(int id1, int id2);

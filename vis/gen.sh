@@ -1,5 +1,5 @@
 for file in *.gv
 do
-  dot -Tpng "$file" -o "i$file.png"
+  dot -Tpng -Gdpi=150 "$file" -o "i$file.png"
 done
 

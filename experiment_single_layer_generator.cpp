@@ -63,11 +63,6 @@ int main(int argc, char *argv[]) {
 	                                           my_experiment->get_int_param("n_learner_features"),
 	                                           false);
 
-	NetworkVisualizer target_vis = NetworkVisualizer(&target_network);
-	NetworkVisualizer learning_vis = NetworkVisualizer(&learning_network);
-	//target_vis.generate_dot(0);
-	//learning_vis.generate_dot(1);
-
 	auto input_sampler = uniform_random(my_experiment->get_int_param("seed"), -10, 10);
 
 	float running_error = 0.05;
@@ -186,5 +181,4 @@ int main(int argc, char *argv[]) {
 	error_metric.commit_values();
 	correlation_metric.commit_values();
 	weight_metric.commit_values();
-	learning_vis.generate_dot(my_experiment->get_int_param("steps"));
 }

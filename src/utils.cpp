@@ -77,10 +77,9 @@ void print_matrix(std::vector < std::vector < int >> const &v) {
 }
 
 
-NetworkVisualizer::NetworkVisualizer(SingleLayerNetwork *network) {
+NetworkVisualizer::NetworkVisualizer(DenseNetwork *network) {
   this->network = network;
 }
-
 
 void NetworkVisualizer::generate_dot(int time_step) {
   auto input_neurons = network->input_neurons;
