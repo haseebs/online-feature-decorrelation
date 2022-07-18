@@ -77,7 +77,7 @@ void print_matrix(std::vector < std::vector < int >> const &v) {
 }
 
 
-NetworkVisualizer::NetworkVisualizer(DenseNetwork *network) {
+NetworkVisualizer::NetworkVisualizer(SingleLayerNetwork *network) {
   this->network = network;
 }
 

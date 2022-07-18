@@ -47,10 +47,10 @@ const &v);
 
 class NetworkVisualizer {
   std::string dot_string;
-  DenseNetwork *network;
+  SingleLayerNetwork *network;
 
  public:
-  explicit NetworkVisualizer(DenseNetwork *network);
+  explicit NetworkVisualizer(SingleLayerNetwork *network);
 
   void generate_dot(int time_step);
   std::string get_graph(int id1, int id2);
